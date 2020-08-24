@@ -1,0 +1,73 @@
+---
+title: "CorrelAid X Challenge"
+author: "LC Bremen"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dev = "svglite",
+  dev.args = list(bg = "transparent"),
+  fig.path = "figs/"
+)
+
+options(device = function(file, width, height) {
+  svglite::svglite(tempfile(), width = width, height = height)
+})
+```
+
+```{r load-r, message=FALSE}
+library(tidyverse)
+library(reticulate)
+library(reactable)
+
+source("scripts/plot_styling.R", echo = FALSE)
+```
+
+```{python load-py}
+from datenguidepy.query_builder import Query
+from datenguidepy.query_helper import get_regions, get_statistics, get_availability_summary
+```
+
+# Names and descriptions of all statistics
+
+```{python get-stat-descriptions}
+stat_des_all = get_statistics().reset_index()
+```
+
+```{r stat_tbl}
+py$stat_des_all %>% 
+  reactable(searchable = TRUE, highlight = TRUE, wrap = FALSE,
+            details = function(index) .$long_description[index],
+            columns = list(statistic = colDef(width = 80),
+                           long_description = colDef(maxWidth = 200)))
+```
+
+# Decide on region ID
+
+```{python get-hb-codes}
+get_regions().query("name.str.contains('Bremen', na = False)")
+```
+
+```{python view-availability}
+hb_ids = ["04", "040", "04011", "04011000"]
+
+for region_id in hb_ids:
+  print(
+    get_availability_summary()
+    .query("region_id == @region_id")
+    .dropna()
+    .shape
+  )
+```
+
