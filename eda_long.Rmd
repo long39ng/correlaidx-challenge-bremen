@@ -1,6 +1,5 @@
 ---
-title: "CorrelAid X Challenge"
-author: "LC Bremen"
+title: "Exploring Datenguide"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -16,14 +15,11 @@ output:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  dev = "svglite",
-  dev.args = list(bg = "transparent"),
+  dev = "png",
+  dev.args = list(bg = "transparent", type = "cairo-png"),
+  fig.retina = 2,
   fig.path = "figs/"
 )
-
-options(device = function(file, width, height) {
-  svglite::svglite(tempfile(), width = width, height = height)
-})
 ```
 
 ```{r load-r, message=FALSE}
@@ -47,7 +43,8 @@ stat_des_all = get_statistics().reset_index()
 
 ```{r stat_tbl}
 py$stat_des_all %>% 
-  reactable(searchable = TRUE, highlight = TRUE, wrap = FALSE,
+  reactable(filterable = TRUE, highlight = TRUE, wrap = FALSE,
+            onClick = "expand", rowStyle = list(cursor = "pointer"),
             details = function(index) .$long_description[index],
             columns = list(statistic = colDef(width = 80),
                            long_description = colDef(maxWidth = 200)))
@@ -69,5 +66,84 @@ for region_id in hb_ids:
     .dropna()
     .shape
   )
+```
+
+# Statistics on commuters
+
+```{r commuter-des-en-tbl}
+# Only {datenguideR} has English descriptions?
+commuter_stat_names <- datenguideR::dg_descriptions %>% 
+  filter(str_detect(stat_name, "^PEN")) %>% 
+  pull(stat_name) %>% 
+  unique()
+
+commuter_des <- datenguideR::dg_descriptions %>% 
+  filter(stat_name %in% commuter_stat_names) %>% 
+  select(stat_name, matches("^param|_en$"), -matches("full"))
+
+commuter_des_sliced <- commuter_des %>% 
+  group_by(stat_name) %>% 
+  slice(1) %>% 
+  select(stat_name, stat_description_en)
+
+commuter_des_sliced %>% 
+  reactable(
+    highlight = TRUE, pagination = FALSE,
+    onClick = "expand", rowStyle = list(cursor = "pointer"),
+    columns = list(stat_name = colDef(maxWidth = 140)),
+    details = function(index) {
+      params <- commuter_des %>% 
+        filter(stat_name == commuter_des_sliced$stat_name[index]) %>% 
+        select(-starts_with("stat_"), -param_description)
+      tbl <- reactable(params, outlined = TRUE, highlight = TRUE, sortable = FALSE)
+      htmltools::div(style = list(margin = "12px 45px"), tbl)
+    }
+  )
+```
+
+One statistic name can be used to query different measures (?) ಠ_ಠ
+
+# Query Länder data
+
+```{python query-laender-data}
+nuts1_regions = (get_regions()
+                   .query("level == 'nuts1'")
+                   .reset_index()
+                   .loc[:, "region_id"]
+                   .to_list())
+
+laender_df = (Query
+                .region(nuts1_regions, ["PEN071", "PEN072", "PEN079"])
+                .results()
+                .drop_duplicates(ignore_index = True)
+                .rename(columns = {"PEN071": "einpendl",
+                                   "PEN072": "auspendl",
+                                   "PEN079": "saldo"})
+                .filter(["name", "year", "einpendl", "auspendl", "saldo"]))
+```
+
+```{r laender-tbl}
+py$laender_df %>% 
+  reactable(defaultPageSize = 16,
+            columns = list(name = colDef(filterable = TRUE),
+                           year = colDef(filterable = TRUE)))
+```
+
+# Exploratory plots
+
+```{r ts-plot, fig.asp=1, out.width="100%"}
+py$laender_df %>% 
+  mutate(auspendl = -auspendl) %>% 
+  pivot_longer(einpendl:saldo, names_to = "statistic") %>% 
+  ggplot(aes(lubridate::make_date(year), value, colour = statistic)) +
+  geom_hline(yintercept = 0, colour = "#cccccc", size = 1) +
+  geom_line() +
+  geom_point() +
+  scale_x_date(guide = guide_axis(check.overlap = TRUE)) +
+  facet_wrap(~name) +
+  labs(x = NULL, y = NULL,
+       title = "Number of commuters across Bundesländer borders") +
+  theme(legend.title = element_blank()) +
+  panel_grid("XxYy")
 ```
 
