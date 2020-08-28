@@ -1,0 +1,205 @@
+---
+title: "German Commuter Statistics"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: bootstrap
+    css: fonts.css
+runtime: shiny
+---
+
+```{html, include = FALSE}
+<link href='https://fonts.googleapis.com/css?family=Fira+Sans:300,300i,400,400i,500,500i,600,600i,700,700i&display=swap' rel='stylesheet' type='text/css'>
+<link href='https://cdn.jsdelivr.net/gh/tonsky/FiraCode@5/distr/fira_code.css' rel='stylesheet' type='text/css'>
+```
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(dplyr)
+library(reticulate)
+library(reactable)
+library(htmltools)
+library(highcharter)
+
+# For deployment when Python 3.6.1 or higher is available on shinyapps.io
+# virtualenv_install(packages = c("pandas", "datenguidepy"),
+#                    pip_options = "--use-feature=2020-resolver")
+# use_virtualenv()
+```
+
+```{python setup-py, include=FALSE}
+from datenguidepy.query_builder import Query
+from datenguidepy.query_helper import get_regions, get_statistics, get_availability_summary
+```
+
+```{python query-data, include=FALSE}
+nuts1_regions = (get_regions()
+                   .query("level == 'nuts1'")
+                   .reset_index()
+                   .loc[:, "region_id"]
+                   .to_list())
+
+laender_df = (Query
+                .region(nuts1_regions, ["PEN071", "PEN072", "PEN079"])
+                .results()
+                .drop_duplicates(ignore_index = True)
+                .rename(columns = {"PEN071": "In",
+                                   "PEN072": "Out",
+                                   "PEN079": "Balance"})
+                .filter(["id", "name", "year", "In", "Out", "Balance"])
+                .replace("Baden-Württemberg, Land", "Baden-Württemberg"))
+```
+
+Sidebar {.sidebar}
+=======================================================================
+
+Access to official data provided by the [datenguide API](https://github.com/datenguide/datenguide-api) -- using the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package
+
+---
+
+```{r}
+selectInput("year", label = "Year:",
+            choices = 2008:2019, selected = 2019)
+
+selectInput("map_var", label = "Variable to map:",
+            choices = c("In", "Out", "Balance"), selected = "Balance")
+```
+
+NUTS-1 (Bundesländer)
+=======================================================================
+
+Column {data-width=700, .tabset}
+-----------------------------------------------------------------------
+
+### Table
+
+```{r laender-tbl}
+bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
+                      align = "left") {
+  bar <- div(style = list(background = fill, width = width, height = height,
+                          float = align, marginInline = "5px"))
+  if (align == "right") {
+    div(style = list(display = "flex", alignItems = "center",
+                     justifyContent = "flex-end"), label, bar)
+  } else {
+    div(style = list(display = "flex", alignItems = "center"), bar, label)
+  }
+}
+
+renderReactable({
+  py$laender_df %>% 
+  filter(year == as.numeric(input$year)) %>% 
+  select(Bundesland = name, Out, Balance, In) %>% 
+  reactable(
+    pagination = FALSE, borderless = TRUE,
+    defaultSorted = "Balance", defaultSortOrder = "desc",
+    columns = list(
+      Bundesland = colDef(defaultSortOrder = "asc"),
+      Balance = colDef(
+        name = emo::ji("balance_scale"),
+        width = 80,
+        cell = function(value) format(value, big.mark = " "),
+        style = list(background = "#f8f8f8"),
+        align = "center"
+      ),
+      Out = colDef(
+        cell = function(value) {
+          width <- paste0(value * .7 * 100 / max(.$Out), "%")
+          value <- format(value, big.mark = " ")
+          bar_chart(value, width = width, fill = "#c7522b", align = "right")
+        }
+      ),
+      In = colDef(
+        cell = function(value) {
+          width <- paste0(value * .7 * 100 / max(.$Out), "%")
+          value <- format(value, big.mark = " ")
+          bar_chart(value, width = width, fill = "#008585", align = "left")
+        },
+        align = "left"
+      )
+    )
+  )
+})
+```
+
+### Choropleth map
+
+```{r laender-map}
+hc_map_colors <- function(hc_map, var) {
+  if (var == "Balance") {
+      ret <- hc_map %>% 
+        hc_colorAxis(stops = JS("[
+        [0, '#c7522b'],
+        [0.194, '#dea868'], 
+        [0.389, '#fbf2c4'],
+        [0.583, '#9bbaa0'],
+        [0.778, '#008585']
+      ]"))
+  }
+  if (var == "In") {
+      ret <- hc_map %>% 
+        hc_colorAxis(stops = JS("[
+        [0, '#fbf2c4'],
+        [0.25, '#c7d6b2'], 
+        [0.5, '#9bbaa0'],
+        [0.75, '#60a08d'],
+        [1, '#008585']
+      ]"))
+  }
+  if (var == "Out") {
+      ret <- hc_map %>% 
+        hc_colorAxis(stops = JS("[
+        [0, '#fbf2c4'],
+        [0.25, '#eacd96'], 
+        [0.5, '#dea868'],
+        [0.75, '#d37f40'],
+        [1, '#c7522b']
+      ]"))
+  }
+  ret
+}
+
+renderHighchart({
+  hcmap(
+    "countries/de/de-all.js",
+    data = py$laender_df %>% filter(year == input$year),
+    value = input$map_var,
+    joinBy = c("woe-name", "name"),
+    name = input$map_var,
+    dataLabels = list(enabled = TRUE, format = "{point.name}"),
+    borderColor = "#fafafa",
+    borderWidth = 0.1
+  ) %>% 
+    hc_map_colors(var = input$map_var)
+})
+```
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Description
+
+Lorem ipsum
+
+NUTS-3 (Kreise)
+=======================================================================
+
+Column {data-width=700, .tabset}
+-----------------------------------------------------------------------
+
+### Table
+
+`<TODO>`
+
+### Choropleth map
+
+`<TODO>`
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Description
+
+Lorem ipsum

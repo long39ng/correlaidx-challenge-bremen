@@ -1,0 +1,29 @@
+:root {
+  /* Fonts */
+  --text-font-family: 'Fira Sans';
+  --text-font-is-google: 1;
+  --text-font-family-fallback: -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, Ubuntu, roboto, noto, segoe ui, arial;
+  --text-font-base: sans-serif;
+  --header-font-family: 'Fira Sans';
+  --header-font-is-google: 1;
+  --code-font-family: 'Fira Code';
+  --code-font-is-google: 0;
+}
+
+html {
+  font-size: var(--base-font-size);
+}
+
+body {
+  font-family: var(--text-font-family), var(--text-font-family-fallback), var(--text-font-base);
+}
+h1, h2, h3 {
+  font-family: var(--header-font-family);
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}
+.ReactTable .rt-table {
+  font-variant-numeric: tabular-nums;
+}
