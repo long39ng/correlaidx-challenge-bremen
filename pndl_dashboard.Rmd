@@ -5,8 +5,8 @@ output:
     orientation: columns
     vertical_layout: fill
     theme: bootstrap
-    css: fonts.css
-runtime: shiny
+    css: "css/fonts.css"
+runtime: shiny_prerendered
 ---
 
 ```{html import-stylesheets, include = FALSE}
@@ -16,42 +16,14 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
-library(shiny)
 library(dplyr)
-library(reticulate)
 library(reactable)
 library(htmltools)
 library(highcharter)
-
-# For deployment when Python 3.6.1 or higher is available on shinyapps.io
-# virtualenv_install(packages = c("pandas", "datenguidepy"),
-#                    pip_options = "--use-feature=2020-resolver")
-# use_virtualenv()
 ```
 
-```{python setup-py, include=FALSE}
-from datenguidepy.query_builder import Query
-from datenguidepy.query_helper import get_regions, get_statistics, get_availability_summary
-```
-
-```{python query-data, include=FALSE}
-nuts1_regions = (get_regions()
-                   .query("level == 'nuts1'")
-                   .reset_index()
-                   .loc[:, "region_id"]
-                   .to_list())
-
-laender_df = (Query
-                .region(nuts1_regions, ["PEN071", "PEN072", "PEN079", "BEVST6"])
-                .results()
-                .query("year > 2010 & year < 2020")
-                .drop_duplicates(ignore_index = True)
-                .rename(columns = {"PEN071": "In",
-                                   "PEN072": "Out",
-                                   "PEN079": "Balance",
-                                   "BEVST6": "pop"})
-                .filter(["id", "name", "year", "In", "Out", "Balance", "pop"])
-                .replace("Baden-Württemberg, Land", "Baden-Württemberg"))
+```{r data, include=FALSE}
+laender_df <- data.table::fread("laender_df.csv", encoding = "UTF-8")
 ```
 
 Sidebar {.sidebar}
@@ -72,7 +44,7 @@ selectInput("get_pct", label = "As a percentage of the population?",
             choices = c("Yes", "No"), selected = "No")
 ```
 
-```{r prep-df-fn}
+```{r prep-df-fn, context="server"}
 transform_stat <- function(data, to_pct = input$get_pct) {
   if (to_pct == "Yes") {
     data %>% 
@@ -91,7 +63,7 @@ Column {data-width=700, .tabset}
 
 ### Table
 
-```{r laender-tbl}
+```{r barchart-tbl-fn, context="server"}
 bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
                       align = "left") {
   label <- div(style = list(marginLeft = "5px", marginRight = "5px"), label)
@@ -104,8 +76,15 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
     div(style = list(display = "flex", alignItems = "center"), bar, label)
   }
 }
-renderReactable({
-  py$laender_df %>% 
+```
+
+```{r laender-tbl-rndr}
+reactableOutput("laender_tbl")
+```
+
+```{r laender-tbl-srvr, context="server"}
+output$laender_tbl <- renderReactable({
+  laender_df %>% 
     transform_stat() %>% 
     filter(year == as.numeric(input$year)) %>% 
     select(Bundesland = name, Out, Balance, In) %>% 
@@ -143,7 +122,7 @@ renderReactable({
 
 ### Choropleth map
 
-```{r laender-map}
+```{r mapcols-fn, context="server"}
 hc_map_colors <- function(hc_map, var) {
   if (var == "Balance") {
       ret <- hc_map %>% 
@@ -177,11 +156,17 @@ hc_map_colors <- function(hc_map, var) {
   }
   ret
 }
+```
 
-renderHighchart({
+```{r laender-map-rndr}
+highchartOutput("laender_map")
+```
+
+```{r laender-map-srvr, context="server"}
+output$laender_map <- renderHighchart({
   hcmap(
     "countries/de/de-all.js",
-    data = py$laender_df %>% 
+    data = laender_df %>% 
       transform_stat() %>% 
       filter(year == input$year),
     value = input$map_var,
