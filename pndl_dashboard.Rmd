@@ -20,6 +20,7 @@ library(dplyr)
 library(reactable)
 library(htmltools)
 library(highcharter)
+library(colorspace)
 ```
 
 ```{r data, include=FALSE}
@@ -37,7 +38,7 @@ Access to official data provided by the [datenguide API](https://github.com/date
 selectInput("year", label = "Year:",
             choices = 2011:2019, selected = 2019)
 
-selectInput("map_var", label = "Statistic to plot:",
+selectInput("plot_var", label = "Statistic to plot:",
             choices = c("In", "Out", "Balance"), selected = "Balance")
 
 selectInput("get_pct", label = "As a percentage of the population?",
@@ -86,7 +87,7 @@ reactableOutput("laender_tbl")
 output$laender_tbl <- renderReactable({
   laender_df %>% 
     transform_stat() %>% 
-    filter(year == as.numeric(input$year)) %>% 
+    filter(year == input$year) %>% 
     select(Bundesland = name, Out, Balance, In) %>% 
     reactable(
       pagination = FALSE, borderless = TRUE,
@@ -126,33 +127,21 @@ output$laender_tbl <- renderReactable({
 hc_map_colors <- function(hc_map, var) {
   if (var == "Balance") {
       ret <- hc_map %>% 
-        hc_colorAxis(stops = JS("[
-        [0, '#c7522b'],
-        [0.194, '#dea868'], 
-        [0.389, '#fbf2c4'],
-        [0.583, '#9bbaa0'],
-        [0.778, '#008585']
-      ]"))
+        hc_colorAxis(stops = color_stops(
+          colors = divergingx_hcl(12, rev = TRUE)[3:12]
+        ))
   }
   if (var == "In") {
       ret <- hc_map %>% 
-        hc_colorAxis(stops = JS("[
-        [0, '#fbf2c4'],
-        [0.25, '#c7d6b2'], 
-        [0.5, '#9bbaa0'],
-        [0.75, '#60a08d'],
-        [1, '#008585']
-      ]"))
+        hc_colorAxis(stops = color_stops(
+          colors = divergingx_hcl(20, rev = TRUE)[11:20]
+        ))
   }
   if (var == "Out") {
       ret <- hc_map %>% 
-        hc_colorAxis(stops = JS("[
-        [0, '#fbf2c4'],
-        [0.25, '#eacd96'], 
-        [0.5, '#dea868'],
-        [0.75, '#d37f40'],
-        [1, '#c7522b']
-      ]"))
+        hc_colorAxis(stops = color_stops(
+          colors = divergingx_hcl(20)[11:20]
+        ))
   }
   ret
 }
@@ -169,18 +158,35 @@ output$laender_map <- renderHighchart({
     data = laender_df %>% 
       transform_stat() %>% 
       filter(year == input$year),
-    value = input$map_var,
+    value = input$plot_var,
     joinBy = c("woe-name", "name"),
-    name = input$map_var,
+    name = input$plot_var,
     dataLabels = list(enabled = TRUE, format = "{point.name}"),
     borderColor = "#fafafa",
     borderWidth = 0.1
   ) %>% 
-    hc_map_colors(var = input$map_var) %>% 
+    hc_map_colors(var = input$plot_var) %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
       fontFamily = "var(--text-font-family), var(--text-font-base)",
       fontVariantNumeric = "tabular-nums"
     ))))
+})
+```
+
+### Time series
+
+```{r laender-ts-rndr}
+highchartOutput("laender_ts")
+```
+
+```{r laender-ts-srvr, context="server"}
+output$laender_ts <- renderHighchart({
+  laender_df %>% 
+    transform_stat() %>% 
+    hchart("line", hcaes(x = year, y = !!sym(input$plot_var), group = name),
+           marker = list(enabled = FALSE)) %>% 
+    hc_xAxis(title = "") %>% 
+    hc_tooltip(crosshairs = TRUE, headerFormat = "")
 })
 ```
 
