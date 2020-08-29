@@ -10,13 +10,10 @@
   --code-font-is-google: 0;
 }
 
-html {
-  font-size: var(--base-font-size);
-}
-
 body {
   font-family: var(--text-font-family), var(--text-font-family-fallback), var(--text-font-base);
 }
+
 h1, h2, h3 {
   font-family: var(--header-font-family);
 }
@@ -24,6 +21,7 @@ h1, h2, h3 {
 table {
   font-variant-numeric: tabular-nums;
 }
+
 .ReactTable .rt-table {
   font-variant-numeric: tabular-nums;
 }

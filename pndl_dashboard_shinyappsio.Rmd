@@ -16,42 +16,12 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
-library(shiny)
 library(dplyr)
-library(reticulate)
 library(reactable)
 library(htmltools)
 library(highcharter)
 
-# For deployment when Python 3.6.1 or higher is available on shinyapps.io
-# virtualenv_install(packages = c("pandas", "datenguidepy"),
-#                    pip_options = "--use-feature=2020-resolver")
-# use_virtualenv()
-```
-
-```{python setup-py, include=FALSE}
-from datenguidepy.query_builder import Query
-from datenguidepy.query_helper import get_regions, get_statistics, get_availability_summary
-```
-
-```{python query-data, include=FALSE}
-nuts1_regions = (get_regions()
-                   .query("level == 'nuts1'")
-                   .reset_index()
-                   .loc[:, "region_id"]
-                   .to_list())
-
-laender_df = (Query
-                .region(nuts1_regions, ["PEN071", "PEN072", "PEN079", "BEVST6"])
-                .results()
-                .query("year > 2010 & year < 2020")
-                .drop_duplicates(ignore_index = True)
-                .rename(columns = {"PEN071": "In",
-                                   "PEN072": "Out",
-                                   "PEN079": "Balance",
-                                   "BEVST6": "pop"})
-                .filter(["id", "name", "year", "In", "Out", "Balance", "pop"])
-                .replace("Baden-Württemberg, Land", "Baden-Württemberg"))
+laender_df <- data.table::fread("laender_df.csv", encoding = "UTF-8")
 ```
 
 Sidebar {.sidebar}
@@ -104,8 +74,9 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
     div(style = list(display = "flex", alignItems = "center"), bar, label)
   }
 }
+
 renderReactable({
-  py$laender_df %>% 
+  laender_df %>% 
     transform_stat() %>% 
     filter(year == as.numeric(input$year)) %>% 
     select(Bundesland = name, Out, Balance, In) %>% 
@@ -181,7 +152,7 @@ hc_map_colors <- function(hc_map, var) {
 renderHighchart({
   hcmap(
     "countries/de/de-all.js",
-    data = py$laender_df %>% 
+    data = laender_df %>% 
       transform_stat() %>% 
       filter(year == input$year),
     value = input$map_var,

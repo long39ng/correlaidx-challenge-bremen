@@ -1,3 +1,5 @@
 # correlaidx-challenge-bremen
 
-_Note: Use [raw.githack.com](https://raw.githack.com/) or [nbviewer](https://nbviewer.jupyter.org/) to view rendered html files_
+EDA: https://raw.githack.com/long39ng/correlaidx-challenge-bremen/longdoing/eda_long.html
+
+Dashboard (WIP): https://long39ng.shinyapps.io/pendlerstat_de/
