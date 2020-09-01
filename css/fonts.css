@@ -29,3 +29,14 @@ table {
 .ReactTable .rt-table {
   font-variant-numeric: tabular-nums;
 }
+
+.value-box .value {
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  margin-right: 42%;
+}
+
+.value-box .caption {
+    text-align: right;
+}

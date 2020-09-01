@@ -208,7 +208,7 @@ get_sum <- function(data, var) {
       pull(.data[[var]]) %>% 
       sum() %>% 
       `/`(1e6) %>% 
-      round(2) %>% 
+      format(digits = 2, nsmall = 2) %>% 
       paste0(" M")
   } else {
     value <- data %>% 
@@ -217,9 +217,9 @@ get_sum <- function(data, var) {
                 pop = sum(pop)) %>% 
       mutate(pct = sum * 100 / pop) %>% 
       pull(pct) %>% 
-      round(2)
+      format(digits = 2, nsmall = 2)
   }
-  paste0(var, ": \n", value)
+  paste0(var, ": ", value)
 }
 ```
 
