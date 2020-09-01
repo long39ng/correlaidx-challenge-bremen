@@ -8,11 +8,9 @@ output:
     css: "css/fonts.css"
 runtime: shiny_prerendered
 ---
-
-```{html import-stylesheets, include = FALSE}
-<link href='https://fonts.googleapis.com/css?family=Fira+Sans:300,300i,400,400i,500,500i,600,600i,700,700i&display=swap' rel='stylesheet' type='text/css'>
-<link href='https://cdn.jsdelivr.net/gh/tonsky/FiraCode@5/distr/fira_code.css' rel='stylesheet' type='text/css'>
-```
+<!-- Import stylesheets -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Sans:300,300i,400,400i,500,500i,600,600i,700,700i&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@5/distr/fira_code.css">
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -25,6 +23,7 @@ library(colorspace)
 
 ```{r data, include=FALSE}
 laender_df <- data.table::fread("laender_df.csv", encoding = "UTF-8")
+nuts1_geojson <- download_map_data("countries/de/de-all")
 ```
 
 Sidebar {.sidebar}
@@ -35,14 +34,14 @@ Access to official data provided by the [datenguide API](https://github.com/date
 ---
 
 ```{r}
-selectInput("year", label = "Year:",
-            choices = 2011:2019, selected = 2019)
+sliderInput("year", label = "Year:",
+            min = 2011, max = 2019, value = 2019, step = 1, ticks = FALSE, sep = "")
 
 selectInput("plot_var", label = "Statistic to plot:",
             choices = c("In", "Out", "Balance"), selected = "Balance")
 
-selectInput("get_pct", label = "As a percentage of the population?",
-            choices = c("Yes", "No"), selected = "No")
+radioButtons("get_pct", label = "As a percentage of the population?",
+             choices = c("Yes", "No"), selected = "No")
 ```
 
 ```{r prep-df-fn, context="server"}
@@ -56,13 +55,17 @@ transform_stat <- function(data, to_pct = input$get_pct) {
 }
 ```
 
-NUTS-1 (Bundesländer)
+NUTS-1 (Bundesländer) {data-icon="fa-th-list"}
 =======================================================================
 
-Column {data-width=700, .tabset}
+Column {data-width=7, .tabset}
 -----------------------------------------------------------------------
 
-### Table
+### `r emo::ji("clipboard")` Table
+
+```{r laender-tbl-rndr}
+reactableOutput("laender_tbl")
+```
 
 ```{r barchart-tbl-fn, context="server"}
 bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
@@ -77,10 +80,6 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
     div(style = list(display = "flex", alignItems = "center"), bar, label)
   }
 }
-```
-
-```{r laender-tbl-rndr}
-reactableOutput("laender_tbl")
 ```
 
 ```{r laender-tbl-srvr, context="server"}
@@ -121,13 +120,17 @@ output$laender_tbl <- renderReactable({
 })
 ```
 
-### Choropleth map
+### `r emo::ji("world_map")` Choropleth map
+
+```{r laender-map-rndr}
+highchartOutput("laender_map")
+```
 
 ```{r mapcols-fn, context="server"}
 hc_map_colors <- function(hc_map, var) {
   if (var == "Balance") {
       ret <- hc_map %>% 
-        hc_colorAxis(stops = color_stops(
+        hc_colorAxis(min = NULL, stops = color_stops(
           colors = divergingx_hcl(12, rev = TRUE)[3:12]
         ))
   }
@@ -147,19 +150,16 @@ hc_map_colors <- function(hc_map, var) {
 }
 ```
 
-```{r laender-map-rndr}
-highchartOutput("laender_map")
-```
-
 ```{r laender-map-srvr, context="server"}
 output$laender_map <- renderHighchart({
-  hcmap(
-    "countries/de/de-all.js",
-    data = laender_df %>% 
+  highchart() %>% 
+    hc_add_series_map(
+    map = nuts1_geojson,
+    df = laender_df %>% 
       transform_stat() %>% 
       filter(year == input$year),
     value = input$plot_var,
-    joinBy = c("woe-name", "name"),
+    joinBy = "name",
     name = input$plot_var,
     dataLabels = list(enabled = TRUE, format = "{point.name}"),
     borderColor = "#fafafa",
@@ -173,7 +173,7 @@ output$laender_map <- renderHighchart({
 })
 ```
 
-### Time series
+### `r emo::ji("chart_with_upwards_trend")` Time series
 
 ```{r laender-ts-rndr}
 highchartOutput("laender_ts")
@@ -190,28 +190,81 @@ output$laender_ts <- renderHighchart({
 })
 ```
 
-Column {data-width=300}
+Column {data-width=3}
 -----------------------------------------------------------------------
+
+### Total {.value-box}
+
+```{r total-box-nuts1-rndr}
+valueBoxOutput("total_box_in")
+valueBoxOutput("total_box_out")
+```
+
+```{r calc-sum-fn, context="server"}
+get_sum <- function(data, var) {
+  if (input$get_pct == "No") {
+    value <- data %>% 
+      filter(year == input$year) %>% 
+      pull(.data[[var]]) %>% 
+      sum() %>% 
+      `/`(1e6) %>% 
+      round(2) %>% 
+      paste0(" M")
+  } else {
+    value <- data %>% 
+      filter(year == input$year) %>% 
+      summarise(sum = sum(.data[[var]]),
+                pop = sum(pop)) %>% 
+      mutate(pct = sum * 100 / pop) %>% 
+      pull(pct) %>% 
+      round(2)
+  }
+  paste0(var, ": \n", value)
+}
+```
+
+```{r total-box-nuts1-srvr, context="server"}
+output$total_box_in <- renderValueBox({
+  valueBox(
+    laender_df %>% 
+      get_sum("In"),
+    color = "#f8f8f8"
+  )
+})
+
+output$total_box_out <- renderValueBox({
+  valueBox(
+    laender_df %>% 
+      get_sum("Out"),
+    caption = paste0("Total in ", input$year), color = "#f8f8f8",
+    if (input$get_pct == "No") {
+      icon = "fa-users"
+    } else {
+      icon = "fa-percent"
+    }
+  )
+})
+```
 
 ### Description
 
 Lorem ipsum
 
-NUTS-3 (Kreise)
+NUTS-3 (Kreise) {data-icon="fa-list"}
 =======================================================================
 
-Column {data-width=700, .tabset}
+Column {data-width=7, .tabset}
 -----------------------------------------------------------------------
 
-### Table
+### `r emo::ji("clipboard")` Table
 
 `<TODO>`
 
-### Choropleth map
+### `r emo::ji("world_map")` Choropleth map
 
 `<TODO>`
 
-Column {data-width=300}
+Column {data-width=3}
 -----------------------------------------------------------------------
 
 ### Description

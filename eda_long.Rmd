@@ -70,46 +70,29 @@ for region_id in hb_ids:
 
 # Statistics on commuters
 
-```{r commuter-des-en-tbl}
-# Only {datenguideR} has English descriptions?
-commuter_stat_names <- datenguideR::dg_descriptions %>% 
-  filter(str_detect(stat_name, "^PEN")) %>% 
-  pull(stat_name) %>% 
-  unique()
-
-commuter_des <- datenguideR::dg_descriptions %>% 
-  filter(stat_name %in% commuter_stat_names) %>% 
-  select(stat_name, matches("^param|_en$"), -matches("full"))
-
-commuter_des_sliced <- commuter_des %>% 
-  group_by(stat_name) %>% 
-  slice(1) %>% 
-  select(stat_name, stat_description_en)
-
-commuter_des_sliced %>% 
-  reactable(
-    highlight = TRUE, pagination = FALSE,
-    onClick = "expand", rowStyle = list(cursor = "pointer"),
-    columns = list(stat_name = colDef(maxWidth = 140)),
-    details = function(index) {
-      params <- commuter_des %>% 
-        filter(stat_name == commuter_des_sliced$stat_name[index]) %>% 
-        select(-starts_with("stat_"), -param_description)
-      tbl <- reactable(params, outlined = TRUE, highlight = TRUE, sortable = FALSE)
-      htmltools::div(style = list(margin = "12px 45px"), tbl)
-    }
-  )
+```{python relevant-stats-en}
+# datenguidepy also provides English translations for statistics
+commuter_stat_des = (get_statistics(target_language = "en")
+                       .query("statistic.str.contains('^PEN')")
+                       .reset_index()
+                       .sort_values(by = "statistic", ignore_index = True))
 ```
 
-One statistic name can be used to query different measures (?) ಠ_ಠ
+```{r commuter-des-en-tbl}
+py$commuter_stat_des %>% 
+  reactable(highlight = TRUE, sortable = FALSE, wrap = FALSE,
+            onClick = "expand", rowStyle = list(cursor = "pointer"),
+            details = function(index) .$long_description[index],
+            columns = list(statistic = colDef(width = 80),
+                           long_description = colDef(maxWidth = 200)))
+```
 
 # Query Länder data
 
 ```{python query-laender-data}
 nuts1_regions = (get_regions()
                    .query("level == 'nuts1'")
-                   .reset_index()
-                   .loc[:, "region_id"]
+                   .index
                    .to_list())
 
 laender_df = (Query

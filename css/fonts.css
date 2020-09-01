@@ -18,6 +18,10 @@ h1, h2, h3 {
   font-family: var(--header-font-family);
 }
 
+code {
+  font-family: var(--code-font-family), Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+}
+
 table {
   font-variant-numeric: tabular-nums;
 }

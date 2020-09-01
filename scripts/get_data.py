@@ -3,8 +3,7 @@ from datenguidepy.query_helper import get_regions, get_statistics, get_availabil
 
 nuts1_regions = (get_regions()
                    .query("level == 'nuts1'")
-                   .reset_index()
-                   .loc[:, "region_id"]
+                   .index
                    .to_list())
 
 laender_df = (Query
