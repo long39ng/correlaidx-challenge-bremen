@@ -1,24 +1,27 @@
 :root {
   /* Fonts */
   --text-font-family: 'Fira Sans';
-  --text-font-is-google: 1;
   --text-font-family-fallback: -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, Ubuntu, roboto, noto, segoe ui, arial;
   --text-font-base: sans-serif;
-  --header-font-family: 'Fira Sans';
-  --header-font-is-google: 1;
+  --header-font-family: 'Zilla Slab';
   --code-font-family: 'Fira Code';
-  --code-font-is-google: 0;
 }
 
 body {
   font-family: var(--text-font-family), var(--text-font-family-fallback), var(--text-font-base);
 }
 
-h1, h2, h3 {
-  font-family: var(--header-font-family);
+.navbar-brand {
+  font-family: var(--header-font-family), var(--text-font-family), var(--text-font-family-fallback), var(--text-font-base);
+  font-weight: 600;
+  font-size: 20px;
 }
 
 code {
+  font-family: var(--code-font-family), Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+}
+
+code[class*="language-"], pre[class*="language-"] {
   font-family: var(--code-font-family), Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
 }
 
@@ -32,9 +35,10 @@ table {
 
 .value-box .value {
   font-size: 32px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
-  margin-right: 42%;
+  margin-right: 36%;
 }
 
 .value-box .caption {

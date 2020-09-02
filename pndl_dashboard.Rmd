@@ -1,16 +1,19 @@
 ---
-title: "German Commuter Statistics"
+title: "`r emo::ji('light_rail')` Commuters in Germany"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
     theme: bootstrap
     css: "css/fonts.css"
+    source_code: embed
 runtime: shiny_prerendered
 ---
+
 <!-- Import stylesheets -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Sans:300,300i,400,400i,500,500i,600,600i,700,700i&display=swap">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@5/distr/fira_code.css">
+<link href="https://code.cdn.mozilla.net/fonts/fira.css" rel="stylesheet"> 
+<link href="https://code.cdn.mozilla.net/fonts/zilla-slab.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@5/distr/fira_code.css" rel="stylesheet">
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -55,7 +58,7 @@ transform_stat <- function(data, to_pct = input$get_pct) {
 }
 ```
 
-NUTS-1 (Bundesländer) {data-icon="fa-th-list"}
+Across Bundesländer (NUTS-1) {data-icon="fa-th-list"}
 =======================================================================
 
 Column {data-width=7, .tabset}
@@ -89,7 +92,7 @@ output$laender_tbl <- renderReactable({
     filter(year == input$year) %>% 
     select(Bundesland = name, Out, Balance, In) %>% 
     reactable(
-      pagination = FALSE, borderless = TRUE,
+      defaultPageSize = 16, borderless = TRUE, wrap = FALSE,
       defaultSorted = "Balance", defaultSortOrder = "desc",
       columns = list(
         Bundesland = colDef(defaultSortOrder = "asc"),
@@ -186,7 +189,11 @@ output$laender_ts <- renderHighchart({
     hchart("line", hcaes(x = year, y = !!sym(input$plot_var), group = name),
            marker = list(enabled = FALSE)) %>% 
     hc_xAxis(title = "") %>% 
-    hc_tooltip(crosshairs = TRUE, headerFormat = "")
+    hc_tooltip(crosshairs = TRUE, headerFormat = "") %>% 
+    hc_add_theme(hc_theme(chart = list(style = list(
+      fontFamily = "var(--text-font-family), var(--text-font-base)",
+      fontVariantNumeric = "tabular-nums"
+    ))))
 })
 ```
 
@@ -250,7 +257,7 @@ output$total_box_out <- renderValueBox({
 
 Lorem ipsum
 
-NUTS-3 (Kreise) {data-icon="fa-list"}
+Across Kreise (NUTS-3) {data-icon="fa-list"}
 =======================================================================
 
 Column {data-width=7, .tabset}
