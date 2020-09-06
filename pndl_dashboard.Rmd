@@ -21,12 +21,33 @@ library(dplyr)
 library(reactable)
 library(htmltools)
 library(highcharter)
-library(colorspace)
 ```
 
 ```{r data, include=FALSE}
-laender_df <- readr::read_csv("laender_df.csv")
 nuts1_geojson <- download_map_data("countries/de/de-all")
+nuts3_geojson <- download_map_data("countries/de/de-all-all")
+nuts1_map_data <- get_data_from_map(nuts1_geojson)
+
+laender_df <- data.table::fread("laender_df.csv", encoding = "UTF-8",
+                                colClasses = c(id = "character")) %>% 
+  as_tibble() %>% 
+  mutate(across(where(is.numeric), as.integer))
+
+kreise_df <- data.table::fread("kreise_df.csv", encoding = "UTF-8",
+                               colClasses = c(id = "character")) %>% 
+  as_tibble() %>% 
+  mutate(across(where(is.numeric), as.integer)) %>% 
+  # Create key variable to join with highcharts map data
+  mutate(parent_id = substr(id, 1, 2)) %>% 
+  left_join(laender_df %>% select(id, bundesland = name) %>% distinct(),
+            by = c("parent_id" = "id")) %>% 
+  left_join(nuts1_map_data %>% select(name, `hc-key`),
+            by = c("bundesland" = "name")) %>% 
+  mutate(`hc-key` = paste0(`hc-key`, "-", id, "000"),
+         # Fix unmatched keys
+         `hc-key` = gsub("de-hb-04011000", "de-ni-04011000", `hc-key`),
+         `hc-key` = gsub("de-ni-03159000", "de-ni-03152000", `hc-key`),
+         `hc-key` = gsub("de-sn-14730000", "de-st-14730000", `hc-key`))
 ```
 
 Sidebar {.sidebar}
@@ -35,6 +56,8 @@ Sidebar {.sidebar}
 Access to official data provided by the [datenguide API](https://github.com/datenguide/datenguide-api) -- using the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package
 
 ---
+
+<br>
 
 ```{r ui-input}
 sliderInput("year", label = "Year:",
@@ -45,6 +68,43 @@ selectInput("plot_var", label = "Statistic to plot:",
 
 radioButtons("choose_pct", label = "As a percentage of the population?",
              choices = c("Yes", "No"), selected = "No")
+```
+
+<br>
+
+---
+
+```{r download-ui}
+selectInput("dataset", "Download data as CSV:",
+            choices = c("NUTS-1", "NUTS-3"))
+
+# downloadButton does not show up in Rmd documents
+# https://stackoverflow.com/a/55725085
+downloadButtonRmd <- function (outputId, label = "Download", class = NULL, ...) {
+  tags$a(id = outputId,
+         class = paste("btn btn-default shiny-download-link", class),
+         href = "", target = "_blank", download = NA, 
+         icon("download"), label, ...)
+}
+
+downloadButtonRmd("download_data", "Download")
+```
+
+```{r download-srvr, context="server"}
+dataset_input <- reactive({
+  switch(input$dataset,
+         "NUTS-1" = laender_df,
+         "NUTS-3" = kreise_df)
+})
+
+output$download_data <- downloadHandler(
+  filename = function() {
+    paste0("commuters_", input$dataset, ".csv")
+  },
+  content = function(file) {
+    readr::write_csv(dataset_input(), file)
+  }
+)
 ```
 
 ```{r prep-df, context="server"}
@@ -61,6 +121,11 @@ laender_df_trans <- reactive({
   laender_df %>% 
     transform_stats()
 })
+
+kreise_df_trans <- reactive({
+  kreise_df %>% 
+    transform_stats()
+})
 ```
 
 Across Bundesländer (NUTS-1) {data-icon="fa-th-list"}
@@ -70,10 +135,6 @@ Column {data-width=7, .tabset}
 -----------------------------------------------------------------------
 
 ### `r emo::ji("clipboard")` Table
-
-```{r laender-tbl-rndr}
-reactableOutput("laender_tbl")
-```
 
 ```{r barchart-tbl-fn, context="server"}
 bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
@@ -90,6 +151,10 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
 }
 ```
 
+```{r laender-tbl-ui}
+reactableOutput("laender_tbl")
+```
+
 ```{r laender-tbl-srvr, context="server"}
 output$laender_tbl <- renderReactable({
   laender_df_trans() %>% 
@@ -99,7 +164,8 @@ output$laender_tbl <- renderReactable({
       defaultPageSize = 16, borderless = TRUE, wrap = FALSE,
       defaultSorted = "Balance", defaultSortOrder = "desc",
       columns = list(
-        name = colDef(name = "Bundesland", defaultSortOrder = "asc"),
+        name = colDef(name = "Bundesland", defaultSortOrder = "asc",
+                      maxWidth = 250),
         Balance = colDef(
           name = emo::ji("balance_scale"),
           width = 80,
@@ -129,32 +195,92 @@ output$laender_tbl <- renderReactable({
 
 ### `r emo::ji("world_map")` Choropleth map
 
-```{r laender-map-rndr}
-highchartOutput("laender_map")
-```
-
 ```{r mapcols-fn, context="server"}
-hc_map_colors <- function(hc_map, var) {
+hc_map_colors <- function(hc_map, var, pct, level) {
   if (var == "Balance") {
-      ret <- hc_map %>% 
-        hc_colorAxis(min = NULL, stops = color_stops(
-          colors = divergingx_hcl(12, rev = TRUE)[3:12]
-        ))
+    ret <- hc_map %>% 
+      hc_colorAxis(stops = color_stops(
+        colors = colorspace::divergingx_hcl(10, rev = TRUE)
+      ))
+    if (pct == "No") {
+      if (level == "nuts1") {
+        ret <- ret %>% 
+          hc_colorAxis(min = -2e5, max = 2e5)
+      }
+      if (level == "nuts3") {
+        ret <- ret %>% 
+          hc_colorAxis(min = -15e4, max = 15e4, tickInterval = 5e4)
+      }
+    }
+    if (pct == "Yes") {
+      if (level == "nuts1") {
+        ret <- ret %>% 
+          hc_colorAxis(min = -10, max = 10)
+      }
+      if (level == "nuts3") {
+        ret <- ret %>% 
+          hc_colorAxis(min = -40, max = 40, tickInterval = 20)
+      }
+    }
   }
   if (var == "In") {
-      ret <- hc_map %>% 
-        hc_colorAxis(stops = color_stops(
-          colors = divergingx_hcl(20, rev = TRUE)[11:20]
-        ))
+    ret <- hc_map %>% 
+      hc_colorAxis(stops = color_stops(
+        colors = colorspace::divergingx_hcl(20, rev = TRUE)[11:20]
+      ))
+    if (pct == "No") {
+      if (level == "nuts1") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 4e5)
+      }
+      if (level == "nuts3") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 3e5)
+      }
+    }
+    if (pct == "Yes") {
+      if (level == "nuts1") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 15)
+      }
+      if (level == "nuts3") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 50)
+      }
+    }
   }
   if (var == "Out") {
-      ret <- hc_map %>% 
-        hc_colorAxis(stops = color_stops(
-          colors = divergingx_hcl(20)[11:20]
-        ))
+    ret <- hc_map %>% 
+      hc_colorAxis(stops = color_stops(
+        colors = colorspace::divergingx_hcl(20)[11:20]
+      ))
+    if (pct == "No") {
+      if (level == "nuts1") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 4e5)
+      }
+      if (level == "nuts3") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 15e4)
+      }
+    }
+    if (pct == "Yes") {
+      if (level == "nuts1") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 10)
+      }
+      if (level == "nuts3") {
+        ret <- ret %>% 
+          hc_colorAxis(max = 30)
+      }
+    }
   }
   ret
 }
+```
+
+```{r laender-map-ui}
+highchartOutput("laender_map")
 ```
 
 ```{r laender-map-srvr, context="server"}
@@ -171,17 +297,26 @@ output$laender_map <- renderHighchart({
     borderColor = "#fafafa",
     borderWidth = 0.1
   ) %>% 
-    hc_map_colors(var = input$plot_var) %>% 
+    hc_map_colors(var = input$plot_var, pct = input$choose_pct, level = "nuts1") %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
-      fontFamily = "var(--text-font-family), var(--text-font-base)",
+      fontFamily = "Fira Sans, sans-serif",
       fontVariantNumeric = "tabular-nums"
-    ))))
+    )))) %>% 
+    hc_exporting(
+      enabled = TRUE,
+      filename = "commuters_nuts1_map",
+      formAttributes = list(target = "_blank"), # Prevents grey overlay after clicking
+      buttons = list(contextButton = list(
+        text = "Export",
+        menuItems = c("downloadPNG", "downloadPDF", "downloadSVG")
+      ))
+    )
 })
 ```
 
 ### `r emo::ji("chart_with_upwards_trend")` Time series
 
-```{r laender-ts-rndr}
+```{r laender-ts-ui}
 highchartOutput("laender_ts")
 ```
 
@@ -193,9 +328,11 @@ output$laender_ts <- renderHighchart({
     hc_xAxis(title = "") %>% 
     hc_tooltip(crosshairs = TRUE, headerFormat = "") %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
-      fontFamily = "var(--text-font-family), var(--text-font-base)",
+      fontFamily = "Fira Sans, sans-serif",
       fontVariantNumeric = "tabular-nums"
     ))))
+  # No exporting as still image. A non-interactive version of this chart would
+  # not be very useful.
 })
 ```
 
@@ -203,11 +340,6 @@ Column {data-width=3}
 -----------------------------------------------------------------------
 
 ### Total {.value-box}
-
-```{r total-box-nuts1-rndr}
-valueBoxOutput("total_box_in")
-valueBoxOutput("total_box_out")
-```
 
 ```{r calc-sum-fn, context="server"}
 get_sum <- function(data, var) {
@@ -232,8 +364,13 @@ get_sum <- function(data, var) {
 }
 ```
 
+```{r total-box-nuts1-ui}
+valueBoxOutput("nuts1_total_box_in")
+valueBoxOutput("nuts1_total_box_out")
+```
+
 ```{r total-box-nuts1-srvr, context="server"}
-output$total_box_in <- renderValueBox({
+output$nuts1_total_box_in <- renderValueBox({
   valueBox(
     laender_df %>% 
       get_sum("In"),
@@ -241,7 +378,7 @@ output$total_box_in <- renderValueBox({
   )
 })
 
-output$total_box_out <- renderValueBox({
+output$nuts1_total_box_out <- renderValueBox({
   valueBox(
     laender_df %>% 
       get_sum("Out"),
@@ -267,14 +404,121 @@ Column {data-width=7, .tabset}
 
 ### `r emo::ji("clipboard")` Table
 
-`<TODO>`
+```{r kreise-tbl-ui}
+reactableOutput("kreise_tbl")
+```
+
+```{r kreise-tbl-srvr, context="server"}
+output$kreise_tbl <- renderReactable({
+  kreise_df_trans() %>% 
+    filter(year == input$year) %>% 
+    select(name, Out, Balance, In) %>% 
+    reactable(
+      defaultPageSize = 15, borderless = TRUE, wrap = FALSE, searchable = TRUE,
+      defaultSorted = "Balance", defaultSortOrder = "desc",
+      columns = list(
+        name = colDef(name = "Kreis", defaultSortOrder = "asc",
+                      maxWidth = 250),
+        Balance = colDef(
+          name = emo::ji("balance_scale"),
+          width = 80,
+          cell = function(value) format(value, big.mark = " "),
+          style = list(background = "#f8f8f8"),
+          align = "center"
+        ),
+        Out = colDef(
+          cell = function(value) {
+            width <- paste0(value * .35 * 100 / max(.$Out), "%")
+            value <- format(value, big.mark = " ")
+            bar_chart(value, width = width, fill = "#c7522b", align = "right")
+          }
+        ),
+        In = colDef(
+          cell = function(value) {
+            width <- paste0(value * .35 * 100 / max(.$Out), "%")
+            value <- format(value, big.mark = " ")
+            bar_chart(value, width = width, fill = "#008585", align = "left")
+          },
+          align = "left"
+        )
+      )
+    )
+})
+```
 
 ### `r emo::ji("world_map")` Choropleth map
 
-`<TODO>`
+```{r kreise-map-ui}
+highchartOutput("kreise_map")
+```
+
+```{r kreise-map-srvr, context="server"}
+output$kreise_map <- renderHighchart({
+  highchart() %>% 
+    hc_add_series_map(
+    map = nuts3_geojson,
+    df = kreise_df_trans() %>% 
+      filter(year == input$year),
+    value = input$plot_var,
+    joinBy = "hc-key",
+    name = input$plot_var,
+    # dataLabels = list(enabled = TRUE, format = "{point.name}"),
+    borderColor = "#fafafa",
+    borderWidth = 0.1
+  ) %>% 
+    hc_map_colors(var = input$plot_var, pct = input$choose_pct, level = "nuts3") %>% 
+    hc_mapNavigation(enabled = TRUE
+      # enableMouseWheelZoom = TRUE,
+      # enableDoubleClickZoom = TRUE
+    ) %>% 
+    hc_add_theme(hc_theme(chart = list(style = list(
+      fontFamily = "Fira Sans, sans-serif",
+      fontVariantNumeric = "tabular-nums"
+    )))) %>% 
+    hc_exporting(
+      enabled = TRUE,
+      filename = "commuters_nuts1_map",
+      formAttributes = list(target = "_blank"), # Prevents grey overlay after clicking
+      buttons = list(contextButton = list(
+        text = "Export",
+        menuItems = c("downloadPNG", "downloadPDF", "downloadSVG")
+      ))
+    )
+})
+```
 
 Column {data-width=3}
 -----------------------------------------------------------------------
+
+### Total {.value-box}
+
+```{r total-box-nuts3-ui}
+valueBoxOutput("nuts3_total_box_in")
+valueBoxOutput("nuts3_total_box_out")
+```
+
+```{r total-box-nuts3-srvr, context="server"}
+output$nuts3_total_box_in <- renderValueBox({
+  valueBox(
+    kreise_df %>% 
+      get_sum("In"),
+    color = "#f8f8f8"
+  )
+})
+
+output$nuts3_total_box_out <- renderValueBox({
+  valueBox(
+    kreise_df %>% 
+      get_sum("Out"),
+    caption = paste0("Total in ", input$year), color = "#f8f8f8",
+    if (input$choose_pct == "No") {
+      icon = "fa-users"
+    } else {
+      icon = "fa-percent"
+    }
+  )
+})
+```
 
 ### Description
 
