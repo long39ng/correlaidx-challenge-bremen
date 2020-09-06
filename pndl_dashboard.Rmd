@@ -10,6 +10,11 @@ output:
 runtime: shiny_prerendered
 ---
 
+```{r include=FALSE, eval=FALSE}
+# Python script to collect data using the Datenguide API:
+# (Link to repo)
+```
+
 <!-- Import stylesheets -->
 <link href="https://code.cdn.mozilla.net/fonts/fira.css" rel="stylesheet"> 
 <link href="https://code.cdn.mozilla.net/fonts/zilla-slab.css" rel="stylesheet">
@@ -102,7 +107,7 @@ output$download_data <- downloadHandler(
     paste0("commuters_", input$dataset, ".csv")
   },
   content = function(file) {
-    readr::write_csv(dataset_input(), file)
+    data.table::fwrite(dataset_input(), file)
   }
 )
 ```
@@ -294,8 +299,7 @@ output$laender_map <- renderHighchart({
     joinBy = "name",
     name = input$plot_var,
     dataLabels = list(enabled = TRUE, format = "{point.name}"),
-    borderColor = "#fafafa",
-    borderWidth = 0.1
+    borderWidth = .3
   ) %>% 
     hc_map_colors(var = input$plot_var, pct = input$choose_pct, level = "nuts1") %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
@@ -462,15 +466,14 @@ output$kreise_map <- renderHighchart({
     value = input$plot_var,
     joinBy = "hc-key",
     name = input$plot_var,
-    # dataLabels = list(enabled = TRUE, format = "{point.name}"),
-    borderColor = "#fafafa",
-    borderWidth = 0.1
+    dataLabels = list(enabled = TRUE, format = "{point.name}",
+                      filter = list(operator = ">",
+                                    property = "pop",
+                                    value = "5e5")),
+    borderWidth = .3
   ) %>% 
     hc_map_colors(var = input$plot_var, pct = input$choose_pct, level = "nuts3") %>% 
-    hc_mapNavigation(enabled = TRUE
-      # enableMouseWheelZoom = TRUE,
-      # enableDoubleClickZoom = TRUE
-    ) %>% 
+    hc_mapNavigation(enabled = TRUE) %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
       fontFamily = "Fira Sans, sans-serif",
       fontVariantNumeric = "tabular-nums"
