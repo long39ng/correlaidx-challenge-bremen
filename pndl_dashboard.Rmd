@@ -41,6 +41,7 @@ laender_df <- data.table::fread("laender_df.csv", encoding = "UTF-8",
 kreise_df <- data.table::fread("kreise_df.csv", encoding = "UTF-8",
                                colClasses = c(id = "character")) %>% 
   as_tibble() %>% 
+  tidyr::drop_na() %>% # Osterode am Harz
   mutate(across(where(is.numeric), as.integer)) %>% 
   # Create key variable to join with highcharts map data
   mutate(parent_id = substr(id, 1, 2)) %>% 
@@ -142,6 +143,7 @@ Column {data-width=7, .tabset}
 ### `r emo::ji("clipboard")` Table
 
 ```{r barchart-tbl-fn, context="server"}
+# https://glin.github.io/reactable/articles/cookbook/cookbook.html#bar-charts-1
 bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
                       align = "left") {
   label <- div(style = list(marginLeft = "5px", marginRight = "5px"), label)
@@ -154,6 +156,11 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
     div(style = list(display = "flex", alignItems = "center"), bar, label)
   }
 }
+
+number_unit <- reactive({
+  if (input$choose_pct == "No") ""
+  else "%"
+})
 ```
 
 ```{r laender-tbl-ui}
@@ -171,27 +178,28 @@ output$laender_tbl <- renderReactable({
       columns = list(
         name = colDef(name = "Bundesland", defaultSortOrder = "asc",
                       maxWidth = 250),
-        Balance = colDef(
-          name = emo::ji("balance_scale"),
-          width = 80,
-          cell = function(value) format(value, big.mark = " "),
-          style = list(background = "#f8f8f8"),
-          align = "center"
-        ),
         Out = colDef(
           cell = function(value) {
-            width <- paste0(value * .7 * 100 / max(.$Out), "%")
-            value <- format(value, big.mark = " ")
+            width <- paste0(value * .75 * 100 / max(.$In), "%")
+            value <- paste0(format(value, big.mark = " "), number_unit())
             bar_chart(value, width = width, fill = "#c7522b", align = "right")
-          }
+          },
+          align = "right"
         ),
         In = colDef(
           cell = function(value) {
-            width <- paste0(value * .7 * 100 / max(.$Out), "%")
-            value <- format(value, big.mark = " ")
+            width <- paste0(value * .75 * 100 / max(.$In), "%")
+            value <- paste0(format(value, big.mark = " "), number_unit())
             bar_chart(value, width = width, fill = "#008585", align = "left")
           },
           align = "left"
+        ),
+        Balance = colDef(
+          name = emo::ji("balance_scale"),
+          width = 80,
+          cell = function(value) paste0(format(value, big.mark = " "), number_unit()),
+          style = list(background = "#f8f8f8"),
+          align = "right"
         )
       )
     )
@@ -202,8 +210,10 @@ output$laender_tbl <- renderReactable({
 
 ```{r mapcols-fn, context="server"}
 hc_map_colors <- function(hc_map, var, pct, level) {
+  ret <- hc_map %>% 
+      hc_colorAxis(labels = list(overflow = "alow"))
   if (var == "Balance") {
-    ret <- hc_map %>% 
+    ret <- ret %>% 
       hc_colorAxis(stops = color_stops(
         colors = colorspace::divergingx_hcl(10, rev = TRUE)
       ))
@@ -218,6 +228,8 @@ hc_map_colors <- function(hc_map, var, pct, level) {
       }
     }
     if (pct == "Yes") {
+      ret <- ret %>% 
+        hc_colorAxis(labels = list(format = paste0("{value}", number_unit())))
       if (level == "nuts1") {
         ret <- ret %>% 
           hc_colorAxis(min = -10, max = 10)
@@ -229,7 +241,7 @@ hc_map_colors <- function(hc_map, var, pct, level) {
     }
   }
   if (var == "In") {
-    ret <- hc_map %>% 
+    ret <- ret %>% 
       hc_colorAxis(stops = color_stops(
         colors = colorspace::divergingx_hcl(20, rev = TRUE)[11:20]
       ))
@@ -244,6 +256,8 @@ hc_map_colors <- function(hc_map, var, pct, level) {
       }
     }
     if (pct == "Yes") {
+      ret <- ret %>% 
+        hc_colorAxis(labels = list(format = paste0("{value}", number_unit())))
       if (level == "nuts1") {
         ret <- ret %>% 
           hc_colorAxis(max = 15)
@@ -255,7 +269,7 @@ hc_map_colors <- function(hc_map, var, pct, level) {
     }
   }
   if (var == "Out") {
-    ret <- hc_map %>% 
+    ret <- ret %>% 
       hc_colorAxis(stops = color_stops(
         colors = colorspace::divergingx_hcl(20)[11:20]
       ))
@@ -270,6 +284,8 @@ hc_map_colors <- function(hc_map, var, pct, level) {
       }
     }
     if (pct == "Yes") {
+      ret <- ret %>% 
+        hc_colorAxis(labels = list(format = paste0("{value}", number_unit())))
       if (level == "nuts1") {
         ret <- ret %>% 
           hc_colorAxis(max = 10)
@@ -302,6 +318,11 @@ output$laender_map <- renderHighchart({
     borderWidth = .3
   ) %>% 
     hc_map_colors(var = input$plot_var, pct = input$choose_pct, level = "nuts1") %>% 
+    hc_legend(title = list(text = input$plot_var)) %>% 
+    hc_tooltip(
+      headerFormat = "{point.key}<br/>",
+      pointFormat = paste0("<b>{point.value}", number_unit(), "</b><br/>")
+    ) %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
       fontFamily = "Fira Sans, sans-serif",
       fontVariantNumeric = "tabular-nums"
@@ -362,7 +383,8 @@ get_sum <- function(data, var) {
                 pop = sum(pop)) %>% 
       mutate(pct = sum * 100 / pop) %>% 
       pull(pct) %>% 
-      format(digits = 2, nsmall = 2)
+      format(digits = 2, nsmall = 2) %>% 
+      paste0("%")
   }
   paste0(var, ": ", value)
 }
@@ -386,11 +408,11 @@ output$nuts1_total_box_out <- renderValueBox({
   valueBox(
     laender_df %>% 
       get_sum("Out"),
-    caption = paste0("Total in ", input$year), color = "#f8f8f8",
+    caption = paste0("Total in Germany ", input$year), color = "#f8f8f8",
     if (input$choose_pct == "No") {
       icon = "fa-users"
     } else {
-      icon = "fa-percent"
+      icon = "fa-percentage"
     }
   )
 })
@@ -423,27 +445,28 @@ output$kreise_tbl <- renderReactable({
       columns = list(
         name = colDef(name = "Kreis", defaultSortOrder = "asc",
                       maxWidth = 250),
-        Balance = colDef(
-          name = emo::ji("balance_scale"),
-          width = 80,
-          cell = function(value) format(value, big.mark = " "),
-          style = list(background = "#f8f8f8"),
-          align = "center"
-        ),
         Out = colDef(
           cell = function(value) {
-            width <- paste0(value * .35 * 100 / max(.$Out), "%")
-            value <- format(value, big.mark = " ")
+            width <- paste0(value * .75 * 100 / max(.$In), "%")
+            value <- paste0(format(value, big.mark = " "), number_unit())
             bar_chart(value, width = width, fill = "#c7522b", align = "right")
-          }
+          },
+          align = "right"
         ),
         In = colDef(
           cell = function(value) {
-            width <- paste0(value * .35 * 100 / max(.$Out), "%")
-            value <- format(value, big.mark = " ")
+            width <- paste0(value * .75 * 100 / max(.$In), "%")
+            value <- paste0(format(value, big.mark = " "), number_unit())
             bar_chart(value, width = width, fill = "#008585", align = "left")
           },
           align = "left"
+        ),
+        Balance = colDef(
+          name = emo::ji("balance_scale"),
+          width = 80,
+          cell = function(value) paste0(format(value, big.mark = " "), number_unit()),
+          style = list(background = "#f8f8f8"),
+          align = "right"
         )
       )
     )
@@ -460,19 +483,24 @@ highchartOutput("kreise_map")
 output$kreise_map <- renderHighchart({
   highchart() %>% 
     hc_add_series_map(
-    map = nuts3_geojson,
-    df = kreise_df_trans() %>% 
-      filter(year == input$year),
-    value = input$plot_var,
-    joinBy = "hc-key",
-    name = input$plot_var,
-    dataLabels = list(enabled = TRUE, format = "{point.name}",
-                      filter = list(operator = ">",
-                                    property = "pop",
-                                    value = "5e5")),
-    borderWidth = .3
-  ) %>% 
+      map = nuts3_geojson,
+      df = kreise_df_trans() %>% 
+        filter(year == input$year),
+      value = input$plot_var,
+      joinBy = "hc-key",
+      name = input$plot_var,
+      dataLabels = list(enabled = TRUE, format = "{point.name}",
+                        filter = list(operator = ">",
+                                      property = "pop",
+                                      value = "5e5")),
+      borderWidth = .3
+    ) %>% 
     hc_map_colors(var = input$plot_var, pct = input$choose_pct, level = "nuts3") %>% 
+    hc_legend(title = list(text = input$plot_var)) %>% 
+    hc_tooltip(
+      headerFormat = "{point.key}<br/>",
+      pointFormat = paste0("<b>{point.value}", number_unit(), "</b><br/>")
+    ) %>% 
     hc_mapNavigation(enabled = TRUE) %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
       fontFamily = "Fira Sans, sans-serif",
@@ -513,11 +541,11 @@ output$nuts3_total_box_out <- renderValueBox({
   valueBox(
     kreise_df %>% 
       get_sum("Out"),
-    caption = paste0("Total in ", input$year), color = "#f8f8f8",
+    caption = paste0("Total in Germany ", input$year), color = "#f8f8f8",
     if (input$choose_pct == "No") {
       icon = "fa-users"
     } else {
-      icon = "fa-percent"
+      icon = "fa-percentage"
     }
   )
 })
