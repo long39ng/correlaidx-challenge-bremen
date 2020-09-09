@@ -16,8 +16,8 @@ This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 
 With our application you can gain insights into commuting behaviour in Germany, both on the level of "Länder" (NUTS-1) and "Kreise" (NUTS-3). You can visualize data as sortable tables with bar plots or presented as a map. For NUTS-1 there is also a time-sereis graph available.
 
-<img alt="Show data as a table" src="./screenshots/datenguide_n1tab.png">
-<img alt="Show data in a map" src="screenshots/datenguide_n1map.png">
+<img alt="Show data as a table" src="./screenshots/datenguide_n1tab.png" width="700">
+<img alt="Show data in a map" src="screenshots/datenguide_n1map.png" width="700">
 
 <img align="right" alt="Screenshot of the Shiny app's left sidebar" src="./screenshots/datenguide_leftpanel.png" width="300">
 
