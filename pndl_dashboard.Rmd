@@ -147,7 +147,7 @@ number_unit <- reactive({
 })
 ```
 
-Across Bundesländer (NUTS-1) {data-icon="fa-th-list"}
+Between Bundesländer (NUTS-1) {data-icon="fa-th-list"}
 =======================================================================
 
 Column {data-width=7, .tabset}
@@ -434,7 +434,7 @@ output$nuts1_total_box_out <- renderValueBox({
 
 Lorem ipsum
 
-Across Kreise (NUTS-3) {data-icon="fa-list"}
+Between Kreise (NUTS-3) {data-icon="fa-list"}
 =======================================================================
 
 Column {data-width=7, .tabset}
