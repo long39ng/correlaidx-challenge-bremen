@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+pndl_dashboard.html
+pndl_dashboard_data/
+rsconnect/

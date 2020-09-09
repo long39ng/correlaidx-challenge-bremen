@@ -13,6 +13,13 @@ runtime: shiny_prerendered
 ```{r include=FALSE, eval=FALSE}
 # Python script to collect data using the Datenguide API:
 # (Link to repo)
+#
+# This is only an interim solution. Ideally, the data would be queried directly
+# when running the dashboard. That is technically doable with reticulate.
+# 
+# However, using datenguidepy to query data inside hosted shiny apps/documents is
+# not possible at the moment because the shinyapps.io server does not have
+# Python>=3.6.1, which is a requirement for pandas>=1.0.0 and datenguidepy.
 ```
 
 <!-- Import stylesheets -->
@@ -59,7 +66,7 @@ kreise_df <- data.table::fread("kreise_df.csv", encoding = "UTF-8",
 Sidebar {.sidebar}
 =======================================================================
 
-Access to official data provided by the [datenguide API](https://github.com/datenguide/datenguide-api) -- using the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package
+Access to official data provided by the [datenguide API](https://github.com/datenguide/datenguide-api) via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package
 
 ---
 
@@ -132,6 +139,12 @@ kreise_df_trans <- reactive({
   kreise_df %>% 
     transform_stats()
 })
+
+# "Helper" to add percent sign to values
+number_unit <- reactive({
+  if (input$choose_pct == "No") ""
+  else "%"
+})
 ```
 
 Across Bundesländer (NUTS-1) {data-icon="fa-th-list"}
@@ -156,11 +169,6 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
     div(style = list(display = "flex", alignItems = "center"), bar, label)
   }
 }
-
-number_unit <- reactive({
-  if (input$choose_pct == "No") ""
-  else "%"
-})
 ```
 
 ```{r laender-tbl-ui}
@@ -351,7 +359,11 @@ output$laender_ts <- renderHighchart({
     hchart("line", hcaes(x = year, y = !!sym(input$plot_var), group = name),
            marker = list(enabled = FALSE)) %>% 
     hc_xAxis(title = "") %>% 
-    hc_tooltip(crosshairs = TRUE, headerFormat = "") %>% 
+    hc_tooltip(
+      crosshairs = TRUE,
+      headerFormat = "{point.key}<br/>",
+      pointFormat = paste0("<b>{point.y}", number_unit(), "</b><br/>")
+    ) %>% 
     hc_add_theme(hc_theme(chart = list(style = list(
       fontFamily = "Fira Sans, sans-serif",
       fontVariantNumeric = "tabular-nums"
