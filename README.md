@@ -1,16 +1,21 @@
 # CorrelAid X Challenge Bremen
 
-This shiny app visualizes how many people have been commuting between states and districts in Germany. Data source: Bundesagentur für Arbeit; access via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package.
+This interactive dashboard visualizes how many people have been commuting between states and districts in Germany. Data source: Bundesagentur für Arbeit; access via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package.
 
 This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 
 
-## Link to Online App
+## Link to online dashboard
 
-[App on shinyapps.io](https://long39ng.shinyapps.io/pendlerstat_de/)
+[Dashboard on shinyapps.io](https://long39ng.shinyapps.io/pendlerstat_de/)
 
-## Running the App on your computer
+## Running the dashboard on your computer
 
+Clone this repository or download all files.
+
+To get data using datenguidepy, run the [Python script](https://github.com/CorrelAid/correlaidx-challenge-bremen/blob/master/scripts/get_data.py). This is only an interim solution. Ideally, the data would be queried directly when running the dashboard. That is technically doable with reticulate. However, using datenguidepy to query data inside hosted shiny apps/documents is not possible at the moment because the shinyapps.io server does not have Python>=3.6.1, which is a requirement for pandas>=1.0.0 and datenguidepy.
+
+Having the datasets in the same directory as the [pndl_dashboard.Rmd](https://github.com/CorrelAid/correlaidx-challenge-bremen/blob/master/pndl_dashboard.Rmd) Rmarkdown file, it can be run in R with `rmarkdown::run(file = "pndl_dashboard.Rmd")` or using the "Run Document" button in RStudio.
 
 ## How to use
 
