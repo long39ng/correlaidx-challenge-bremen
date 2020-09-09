@@ -1,6 +1,6 @@
 # CorrelAid X Challenge Bremen
 
-This shiny app visualizes how many people have been commuting between states and districts in Germany. Data source: Bundesagentur für Arbeit; access via via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package.
+This shiny app visualizes how many people have been commuting between states and districts in Germany. Data source: Bundesagentur für Arbeit; access via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package.
 
 This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 
