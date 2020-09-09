@@ -26,4 +26,4 @@ The panel on the left lets you choose
 
 You can also download the maps as images in different file formats.
 
-<img alt="Download maps as images" src="./screenshots/datenguide_n3mapexport.png">
+<img alt="Download maps as images" src="./screenshots/datenguide_n3mapexport.png" width="500">
