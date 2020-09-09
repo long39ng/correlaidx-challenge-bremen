@@ -14,4 +14,4 @@ This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 
 ## How to use
 
-![Screenshot of the Shiny app's left sidebar](./screenshots/datenguide_leftpanel.png "Screenshot of the left sidebar")
+<img alt="Screenshot of the Shiny app's left sidebar" src="./screenshots/datenguide_leftpanel.png" width="300" height="500">
