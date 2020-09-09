@@ -12,7 +12,7 @@ runtime: shiny_prerendered
 
 ```{r include=FALSE, eval=FALSE}
 # Python script to collect data using the Datenguide API:
-# (Link to repo)
+# https://github.com/CorrelAid/correlaidx-challenge-bremen/blob/master/scripts/get_data.py
 #
 # This is only an interim solution. Ideally, the data would be queried directly
 # when running the dashboard. That is technically doable with reticulate.
