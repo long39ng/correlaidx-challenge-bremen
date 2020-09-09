@@ -10,3 +10,8 @@ This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 [App on shinyapps.io](https://long39ng.shinyapps.io/pendlerstat_de/)
 
 ## Running the App on your computer
+
+
+## How to use
+
+![Screenshot of the Shiny app's left sidebar](./screenshots/datenguide_leftpanel.png "Screenshot of the left sidebar")
