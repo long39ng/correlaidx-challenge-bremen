@@ -18,10 +18,10 @@ With our application you can gain insights into commuting behaviour in Germany, 
 
 <img alt="Screenshot of the Shiny app's left sidebar" src="./screenshots/datenguide_leftpanel.png" width="300">
 
-The panel on the left lets you choose
-… a year between 2011 and 2019 for which numbers are shown
-… whether to show commuter inflow, outflow, or balance
-… whether numbers are absolute or in proportion to the regions populations
+The panel on the left lets you choose  
+… a year between 2011 and 2019 for which numbers are shown  
+… whether to show commuter inflow, outflow, or balance  
+… whether numbers are absolute or in proportion to the regions populations  
 … and if you like to download the data as a .csv-file.
 
 You can also download the maps as images in different file formats.
