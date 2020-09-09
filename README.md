@@ -23,13 +23,13 @@ For NUTS-1 there is also a time-sereis graph available.
 
 <img alt="Show data as time series" src="screenshots/datenguide_n1time.png" width="500">
 
-<img alt="Screenshot of the Shiny app's left sidebar" src="./screenshots/datenguide_leftpanel.png" width="300">
-
 The panel on the left lets you choose  
 … a year between 2011 and 2019 for which numbers are shown  
 … whether to show commuter inflow, outflow, or balance  
 … whether numbers are absolute or in proportion to the regions populations  
-… and if you like to download the data as a .csv-file.
+… and if you like to download the data as a .csv-file.  
+
+<img alt="Screenshot of the Shiny app's left sidebar" src="./screenshots/datenguide_leftpanel.png" width="300">  
 
 You can also download the maps as images in different file formats.
 
