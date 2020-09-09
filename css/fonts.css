@@ -1,0 +1,46 @@
+:root {
+  /* Fonts */
+  --text-font-family: 'Fira Sans';
+  --text-font-family-fallback: -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, Ubuntu, roboto, noto, segoe ui, arial;
+  --text-font-base: sans-serif;
+  --header-font-family: 'Zilla Slab';
+  --code-font-family: 'Fira Code';
+}
+
+body {
+  font-family: var(--text-font-family), var(--text-font-family-fallback), var(--text-font-base);
+}
+
+.navbar-brand {
+  font-family: var(--header-font-family), var(--text-font-family), var(--text-font-family-fallback), var(--text-font-base);
+  font-weight: 600;
+  font-size: 20px;
+}
+
+code {
+  font-family: var(--code-font-family), Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+}
+
+code[class*="language-"], pre[class*="language-"] {
+  font-family: var(--code-font-family), Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+.ReactTable .rt-table {
+  font-variant-numeric: tabular-nums;
+}
+
+.value-box .value {
+  font-size: 32px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  margin-right: 36%;
+}
+
+.value-box .caption {
+    text-align: right;
+}
