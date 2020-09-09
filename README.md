@@ -10,6 +10,3 @@ This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 [App on shinyapps.io](https://long39ng.shinyapps.io/pendlerstat_de/)
 
 ## Running the App on your computer
-
-
-EDA: https://raw.githack.com/long39ng/correlaidx-challenge-bremen/longdoing/eda_long.html
