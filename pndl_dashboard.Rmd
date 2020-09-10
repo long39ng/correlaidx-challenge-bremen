@@ -569,8 +569,8 @@ output$nuts3_total_box_out <- renderValueBox({
 
 ### Description
 
-<div class="description-text">Visualizations at the NUTS-3 level shows how commuting centers around the larger cities/districts in each region. Looking at total inflow for 2019, the top five cities are Munich, Frankfurt a.M., Hamburg, Berlin and Cologne. They are also among those with the highest total outflow.
+<div class="description-text">Visualizations at the NUTS-3 level show how commuting centers around the larger cities/districts in each region. Looking at total inflow for 2019, the top five cities are Munich, Frankfurt a.M., Hamburg, Berlin and Cologne. They are also among those with the highest total outflow.
 
-When scaling data in relation to population size, we can observe the important role of mid-sized cites for surrounding regions. This pattern becomes especially prominent when looking at choropleth maps for the balance of commuter flows (e.g. in Baden-Wuerttemberg and Bavaria). Also, with the statistics accounting for commuting between districts but still within state borders, Bremen and Hamburg are no longer outliers with regard to commuter inflow and balance, as was the case in the state-level comparison.</div>
+When scaling data in relation to population size, we can observe the important role of mid-sized cities for surrounding regions. This pattern becomes especially prominent when looking at choropleth maps for the balance of commuter flows (e.g. in Baden-Wuerttemberg and Bavaria). Also, with the statistics accounting for commuting between districts but still within state borders, Bremen and Hamburg are no longer outliers with regard to commuter inflow and balance, as was the case in the state-level comparison.</div>
 
 <span style="font-size:12px;line-height:1.2">\* The employment statistics only account for commuters from abroad, but not those who commute to other countries for work, which results in a discrepancy between the total size of inflow and outflow.</span>
