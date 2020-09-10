@@ -66,7 +66,7 @@ kreise_df <- data.table::fread("kreise_df.csv", encoding = "UTF-8",
 Sidebar {.sidebar}
 =======================================================================
 
-Access to official data provided by the [datenguide API](https://github.com/datenguide/datenguide-api) via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package
+Data from the employment statistics of the [German Federal Employment Agency](https://www.arbeitsagentur.de/). Access to official data provided by the [datenguide API](https://github.com/datenguide/datenguide-api) via the [datenguidepy](https://github.com/CorrelAid/datenguide-python) package
 
 ---
 
@@ -420,9 +420,9 @@ output$nuts1_total_box_out <- renderValueBox({
   valueBox(
     laender_df %>% 
       get_sum("Out"),
-    caption = paste0("Total in Germany ", input$year), color = "#f8f8f8",
+    caption = paste0("Total in Germany ", input$year, "*"), color = "#f8f8f8",
     if (input$choose_pct == "No") {
-      icon = "fa-users"
+      icon = "fa-user-friends"
     } else {
       icon = "fa-percentage"
     }
@@ -432,7 +432,11 @@ output$nuts1_total_box_out <- renderValueBox({
 
 ### Description
 
-Lorem ipsum
+<div class="description-text">Here, commuters are all employees subject to social insurance whose workplace is located in a different municipality from the one in which they live &ndash; regardless of whether and how often they actually commute. Looking at the number of commuters across state borders, there tends to have been more movement in and out of the states with a larger population, with the inflow generally exceeding the outflow in these states.
+
+All Länder surrounding the three city states Berlin, Bremen and Hamburg have had more people commuting outwards than inwards in favour of the positive commuter balance in these city states. This pattern becomes even more striking when adjusted for the number of inhabitants.</div>
+
+<span style="font-size:12px;line-height:normal">\* The employment statistics only account for commuters from abroad, but not those who commute to other countries for work, which results in a discrepancy between the total size of inflow and outflow.</span>
 
 Between Kreise (NUTS-3) {data-icon="fa-list"}
 =======================================================================
@@ -553,9 +557,9 @@ output$nuts3_total_box_out <- renderValueBox({
   valueBox(
     kreise_df %>% 
       get_sum("Out"),
-    caption = paste0("Total in Germany ", input$year), color = "#f8f8f8",
+    caption = paste0("Total in Germany ", input$year, "*"), color = "#f8f8f8",
     if (input$choose_pct == "No") {
-      icon = "fa-users"
+      icon = "fa-user-friends"
     } else {
       icon = "fa-percentage"
     }
@@ -565,4 +569,8 @@ output$nuts3_total_box_out <- renderValueBox({
 
 ### Description
 
-Lorem ipsum
+<div class="description-text">Visualizations at the NUTS-3 level shows how commuting centers around the larger cities/districts in each region. Looking at total inflow for 2019, the top five cities are Munich, Frankfurt a.M., Hamburg, Berlin and Cologne. They are also among those with the highest total outflow.
+
+When scaling data in relation to population size, we can observe the important role of mid-sized cites for surrounding regions. This pattern becomes especially prominent when looking at choropleth maps for the balance of commuter flows (e.g. in Baden-Wuerttemberg and Bavaria). Also, with the statistics accounting for commuting between districts but still within state borders, Bremen and Hamburg are no longer outliers with regard to commuter inflow and balance, as was the case in the state-level comparison.</div>
+
+<span style="font-size:12px;line-height:1.2">\* The employment statistics only account for commuters from abroad, but not those who commute to other countries for work, which results in a discrepancy between the total size of inflow and outflow.</span>
