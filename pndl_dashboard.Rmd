@@ -6,6 +6,10 @@ output:
     vertical_layout: fill
     theme: bootstrap
     css: "css/fonts.css"
+    navbar:
+      - { title: "<span class='fa fa-github' style='margin-right: -15px;'></span>",
+          href: "https://github.com/CorrelAid/correlaidx-challenge-bremen",
+          align: right }
     source_code: embed
 runtime: shiny_prerendered
 ---
