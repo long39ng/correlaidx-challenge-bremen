@@ -7,7 +7,7 @@ output:
     theme: bootstrap
     css: "css/fonts.css"
     source_code: embed
-runtime: shiny_prerendered
+runtime: shiny
 ---
 
 ```{r include=FALSE, eval=FALSE}
