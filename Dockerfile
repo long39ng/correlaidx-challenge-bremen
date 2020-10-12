@@ -9,4 +9,4 @@ ADD install.packages.R /install.packages.R
 RUN Rscript install.packages.R
 ADD . /app
 WORKDIR /app
-CMD ["Rscript", "-e", "rmarkdown::run(file = '/app/pndl_dashboard.Rmd', shiny_args = list(port = 3838))"]
+CMD ["Rscript", "-e", "rmarkdown::run(file = '/app/pndl_dashboard.Rmd', shiny_args = list(port = 3838, host = '0.0.0.0'))"]

@@ -1,7 +1,6 @@
-packages <- c("rmarkdown", "flexdashboard", "igraph", "reactable", "htmltools", "highcharter")
+packages <- c("remotes", "rmarkdown", "flexdashboard", "igraph", "reactable", "htmltools", "highcharter", "shiny", "dplyr")
 
 for (p in packages) {
-   print(p)
    install.packages(p)
 }
 
