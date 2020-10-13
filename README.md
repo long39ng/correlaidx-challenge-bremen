@@ -8,6 +8,7 @@ This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 ## Link to online dashboard
 
 [Dashboard on shinyapps.io](https://long39ng.shinyapps.io/pendlerstat_de/) (moderately mobile-friendly)
+
 [Dashboard on CorrelAid server](https://commute.correlaid.org)
 
 ## Running the dashboard on your computer
