@@ -8,6 +8,7 @@ This is an entry for the CorrelAidX Challenge 2020 by CorrelAidX Bremen.
 ## Link to online dashboard
 
 [Dashboard on shinyapps.io](https://long39ng.shinyapps.io/pendlerstat_de/) (moderately mobile-friendly)
+[Dashboard on CorrelAid server](https://commute.correlaid.org)
 
 ## Running the dashboard on your computer
 
@@ -51,3 +52,23 @@ You can also download the maps as images in different file formats.
   - [reactable](https://glin.github.io/reactable/) (interactive data tables)
   - [highcharter](https://jkunst.com/highcharter/) (interactive plots)
 - Fonts and icons: [Fira Sans](https://github.com/mozilla/Fira), [Zilla Slab](https://github.com/mozilla/zilla-slab), [Fira Code](https://github.com/tonsky/FiraCode), [emo(ji)](https://github.com/hadley/emo/), [Font Awesome](https://fontawesome.com/)
+
+
+## Docker deployment
+build the docker image
+```
+docker-compose build
+```
+
+run the container: 
+
+```
+docker-compose up
+```
+
+or daemonized
+```
+docker-compose up
+```
+
+This will expose `localhost:8383` (**not** the typical `3838`)
