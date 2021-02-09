@@ -517,7 +517,8 @@ output$kreise_tbl <- renderReactable({
         )
       )
   })
-})
+}) %>% 
+  bindCache(input$year, input$choose_pct)
 ```
 
 ### `r emo::ji("world_map")` Choropleth map
@@ -566,7 +567,8 @@ output$kreise_map <- renderHighchart({
         ))
       )
   })
-})
+}) %>% 
+  bindCache(input$year, input$plot_var, input$choose_pct)
 ```
 
 Column {data-width=3}
