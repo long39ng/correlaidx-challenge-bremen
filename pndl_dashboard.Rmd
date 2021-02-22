@@ -194,7 +194,7 @@ bar_chart <- function(label, width = "100%", height = "14px", fill = "#cccccc",
                       align = "left") {
   label <- div(style = list(marginLeft = "5px", marginRight = "5px"), label)
   bar <- div(style = list(background = fill, width = width, height = height,
-                          float = align))
+                          float = align, transition = "width 1s"))
   if (align == "right") {
     div(style = list(display = "flex", alignItems = "center",
                      justifyContent = "flex-end"), label, bar)
