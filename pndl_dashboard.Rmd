@@ -4,8 +4,9 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
-    theme: bootstrap
-    css: "css/fonts.css"
+    theme:
+      version: 4
+    css: "css/styles.css"
     source_code: "https://github.com/CorrelAid/correlaidx-challenge-bremen"
 runtime: shiny_prerendered
 ---
@@ -438,8 +439,7 @@ valueBoxOutput("nuts1_total_box_out")
 output$nuts1_total_box_in <- renderValueBox({
   valueBox(
     laender_df %>% 
-      get_sum("In"),
-    color = "#f8f8f8"
+      get_sum("In")
   )
 })
 
@@ -447,7 +447,7 @@ output$nuts1_total_box_out <- renderValueBox({
   valueBox(
     laender_df %>% 
       get_sum("Out"),
-    caption = paste0("Total in Germany ", input$year, "*"), color = "#f8f8f8",
+    caption = paste0("Total in Germany ", input$year, "*"),
     if (input$choose_pct == "No") {
       icon = "fa-user-friends"
     } else {
@@ -585,8 +585,7 @@ valueBoxOutput("nuts3_total_box_out")
 output$nuts3_total_box_in <- renderValueBox({
   valueBox(
     kreise_df %>% 
-      get_sum("In"),
-    color = "#f8f8f8"
+      get_sum("In")
   )
 })
 
@@ -594,7 +593,7 @@ output$nuts3_total_box_out <- renderValueBox({
   valueBox(
     kreise_df %>% 
       get_sum("Out"),
-    caption = paste0("Total in Germany ", input$year, "*"), color = "#f8f8f8",
+    caption = paste0("Total in Germany ", input$year, "*"),
     if (input$choose_pct == "No") {
       icon = "fa-user-friends"
     } else {
